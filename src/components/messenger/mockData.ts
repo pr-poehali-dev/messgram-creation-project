@@ -1,4 +1,4 @@
-export type Section = "chats" | "groups" | "channels" | "search" | "shop" | "settings" | "profile";
+export type Section = "chats" | "groups" | "channels" | "search" | "shop" | "settings" | "profile" | "download";
 
 export const MOCK_CHATS = [
   { id: 1, name: "Алёна Михайлова", msg: "Увидимся завтра в 18:00?", time: "14:32", unread: 2, online: true, avatar: "АМ", color: "from-purple-500 to-pink-500" },
@@ -53,4 +53,5 @@ export const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: "shop", icon: "ShoppingBag", label: "Магазин" },
   { id: "settings", icon: "Shield", label: "Защита" },
   { id: "profile", icon: "User", label: "Профиль" },
+  { id: "download", icon: "Download", label: "Скачать" },
 ];

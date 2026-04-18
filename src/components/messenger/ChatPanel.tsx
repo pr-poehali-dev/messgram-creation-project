@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { MOCK_CHATS, MOCK_MESSAGES } from "./mockData";
+
+type Message = { id: number; text: string; out: boolean; time: string };
 
 export function AvatarComp({ initials, color, size = "md", online = false }: { initials: string; color: string; size?: "sm" | "md" | "lg"; online?: boolean }) {
   const sizes = { sm: "w-9 h-9 text-xs", md: "w-11 h-11 text-sm", lg: "w-16 h-16 text-lg" };
@@ -55,7 +57,43 @@ export function ChatList({ onSelect, selected }: { onSelect: (id: number) => voi
 
 export function ChatView({ chatId }: { chatId: number | null }) {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
+  const [showTyping, setShowTyping] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const chat = MOCK_CHATS.find(c => c.id === chatId);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, showTyping]);
+
+  const sendMessage = () => {
+    const text = input.trim();
+    if (!text) return;
+    const now = new Date();
+    const time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+    const newMsg: Message = { id: Date.now(), text, out: true, time };
+    setMessages(prev => [...prev, newMsg]);
+    setInput("");
+    setShowTyping(true);
+    setTimeout(() => {
+      setShowTyping(false);
+      const replies = ["Понял, спасибо!", "Хорошо, договорились 👍", "Отлично!", "Окей, напишу чуть позже", "👌"];
+      const reply: Message = {
+        id: Date.now() + 1,
+        text: replies[Math.floor(Math.random() * replies.length)],
+        out: false,
+        time: `${now.getHours().toString().padStart(2, "0")}:${(now.getMinutes() + 1).toString().padStart(2, "0")}`,
+      };
+      setMessages(prev => [...prev, reply]);
+    }, 1500);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
 
   if (!chat) {
     return (
@@ -96,24 +134,24 @@ export function ChatView({ chatId }: { chatId: number | null }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 rounded-xl hover:bg-secondary/60 transition-colors">
+          <button className="p-2 rounded-xl hover:bg-secondary/60 transition-colors active:scale-95">
             <Icon name="Phone" size={18} className="text-muted-foreground" />
           </button>
-          <button className="p-2 rounded-xl hover:bg-secondary/60 transition-colors">
+          <button className="p-2 rounded-xl hover:bg-secondary/60 transition-colors active:scale-95">
             <Icon name="Video" size={18} className="text-muted-foreground" />
           </button>
-          <button className="p-2 rounded-xl hover:bg-secondary/60 transition-colors">
+          <button className="p-2 rounded-xl hover:bg-secondary/60 transition-colors active:scale-95">
             <Icon name="MoreVertical" size={18} className="text-muted-foreground" />
           </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {MOCK_MESSAGES.map((msg, i) => (
+        {messages.map((msg, i) => (
           <div
             key={msg.id}
             className={`flex ${msg.out ? "justify-end" : "justify-start"} animate-fade-in`}
-            style={{ animationDelay: `${i * 0.06}s`, opacity: 0, animationFillMode: "forwards" }}
+            style={{ animationDelay: `${Math.min(i, 6) * 0.06}s`, opacity: 0, animationFillMode: "forwards" }}
           >
             <div className={`max-w-[72%] px-4 py-2.5 ${msg.out ? "msg-out text-white" : "msg-in text-foreground"}`}>
               <p className="text-sm leading-relaxed">{msg.text}</p>
@@ -124,31 +162,39 @@ export function ChatView({ chatId }: { chatId: number | null }) {
             </div>
           </div>
         ))}
-        <div className="flex justify-start animate-fade-in">
-          <div className="msg-in px-4 py-3 flex items-center gap-1.5">
-            <span className="typing-dot w-2 h-2 rounded-full bg-muted-foreground block" />
-            <span className="typing-dot w-2 h-2 rounded-full bg-muted-foreground block" />
-            <span className="typing-dot w-2 h-2 rounded-full bg-muted-foreground block" />
+        {showTyping && (
+          <div className="flex justify-start animate-fade-in">
+            <div className="msg-in px-4 py-3 flex items-center gap-1.5">
+              <span className="typing-dot w-2 h-2 rounded-full bg-muted-foreground block" />
+              <span className="typing-dot w-2 h-2 rounded-full bg-muted-foreground block" />
+              <span className="typing-dot w-2 h-2 rounded-full bg-muted-foreground block" />
+            </div>
           </div>
-        </div>
+        )}
+        <div ref={bottomRef} />
       </div>
 
       <div className="glass border-t border-border/40 p-3 flex items-end gap-2">
-        <button className="p-2.5 rounded-xl hover:bg-secondary/60 transition-colors flex-shrink-0">
+        <button className="p-2.5 rounded-xl hover:bg-secondary/60 transition-colors flex-shrink-0 active:scale-95">
           <Icon name="Paperclip" size={18} className="text-muted-foreground" />
         </button>
         <div className="flex-1 glass-light rounded-2xl px-4 py-2.5 flex items-center gap-2">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Сообщение..."
             className="bg-transparent flex-1 outline-none text-sm text-foreground placeholder:text-muted-foreground"
           />
-          <button className="flex-shrink-0">
+          <button className="flex-shrink-0 active:scale-95">
             <Icon name="Smile" size={18} className="text-muted-foreground hover:text-primary transition-colors" />
           </button>
         </div>
-        <button className="p-2.5 rounded-xl bg-primary hover:bg-primary/90 transition-all neon-glow flex-shrink-0 hover-lift">
+        <button
+          onClick={sendMessage}
+          className="p-2.5 rounded-xl bg-primary hover:bg-primary/90 transition-all neon-glow flex-shrink-0 hover-lift active:scale-95 disabled:opacity-40"
+          disabled={!input.trim()}
+        >
           <Icon name="Send" size={18} className="text-white" />
         </button>
       </div>

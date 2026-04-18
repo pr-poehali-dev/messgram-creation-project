@@ -3,19 +3,56 @@ import Icon from "@/components/ui/icon";
 import { MOCK_CHATS, MOCK_GROUPS, MOCK_CHANNELS, GIFTS, COIN_PACKS } from "./mockData";
 import { AvatarComp } from "./ChatPanel";
 
-export function GroupsSection() {
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass neon-glow rounded-2xl px-4 py-3 flex items-center gap-2.5 animate-fade-in shadow-xl">
+      <Icon name="CheckCircle" size={16} className="text-green-400 flex-shrink-0" />
+      <span className="text-sm text-foreground font-medium">{message}</span>
+      <button onClick={onClose} className="ml-2 text-muted-foreground hover:text-foreground">
+        <Icon name="X" size={14} />
+      </button>
+    </div>
+  );
+}
+
+function useToast() {
+  const [msg, setMsg] = useState<string | null>(null);
+  const show = (text: string) => {
+    setMsg(text);
+    setTimeout(() => setMsg(null), 2500);
+  };
+  return { msg, show, clear: () => setMsg(null) };
+}
+
+export function GroupsSection({ onOpenChat }: { onOpenChat?: (id: number) => void }) {
+  const toast = useToast();
+  const [joined, setJoined] = useState<number[]>([]);
+
+  const handleJoin = (id: number, name: string) => {
+    setJoined(prev => [...prev, id]);
+    toast.show(`Вы вступили в группу «${name}»`);
+  };
+
   return (
     <div className="p-4 space-y-3 animate-fade-in">
+      {toast.msg && <Toast message={toast.msg} onClose={toast.clear} />}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-lg gradient-text">Группы</h2>
-        <button className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-sm px-3 py-1.5 rounded-xl transition-all">
+        <button
+          onClick={() => toast.show("Создание группы — скоро!")}
+          className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-sm px-3 py-1.5 rounded-xl transition-all active:scale-95"
+        >
           <Icon name="Plus" size={14} />
           Создать
         </button>
       </div>
       {MOCK_GROUPS.map((g, i) => (
-        <div key={g.id} className="glass hover-lift rounded-2xl p-4 flex items-center gap-3 cursor-pointer animate-fade-in"
-          style={{ animationDelay: `${i * 0.08}s`, opacity: 0, animationFillMode: "forwards" }}>
+        <div
+          key={g.id}
+          onClick={() => onOpenChat && onOpenChat(i + 1)}
+          className="glass hover-lift rounded-2xl p-4 flex items-center gap-3 cursor-pointer animate-fade-in"
+          style={{ animationDelay: `${i * 0.08}s`, opacity: 0, animationFillMode: "forwards" }}
+        >
           <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${g.color} flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0`}>
             {g.avatar}
           </div>
@@ -33,6 +70,16 @@ export function GroupsSection() {
               <span className="text-xs text-muted-foreground truncate">{g.msg}</span>
             </div>
           </div>
+          <button
+            onClick={e => { e.stopPropagation(); handleJoin(g.id, g.name); }}
+            className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-xl transition-all font-medium active:scale-95 ${
+              joined.includes(g.id)
+                ? "bg-green-500/20 border border-green-500/30 text-green-400"
+                : "bg-primary/20 hover:bg-primary/40 border border-primary/30 text-primary"
+            }`}
+          >
+            {joined.includes(g.id) ? "Вступил" : "Вступить"}
+          </button>
         </div>
       ))}
     </div>
@@ -40,11 +87,23 @@ export function GroupsSection() {
 }
 
 export function ChannelsSection() {
+  const toast = useToast();
+  const [subscribed, setSubscribed] = useState<number[]>([]);
+
+  const handleSubscribe = (id: number, name: string) => {
+    setSubscribed(prev => [...prev, id]);
+    toast.show(`Подписка на «${name}» оформлена`);
+  };
+
   return (
     <div className="p-4 space-y-3 animate-fade-in">
+      {toast.msg && <Toast message={toast.msg} onClose={toast.clear} />}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-lg gradient-text">Каналы</h2>
-        <button className="flex items-center gap-2 bg-accent/20 hover:bg-accent/30 border border-accent/30 text-accent text-sm px-3 py-1.5 rounded-xl transition-all">
+        <button
+          onClick={() => toast.show("Создание канала — скоро!")}
+          className="flex items-center gap-2 bg-accent/20 hover:bg-accent/30 border border-accent/30 text-accent text-sm px-3 py-1.5 rounded-xl transition-all active:scale-95"
+        >
           <Icon name="Plus" size={14} />
           Создать
         </button>
@@ -69,8 +128,15 @@ export function ChannelsSection() {
             </div>
             <span className="text-xs text-muted-foreground">{ch.msg}</span>
           </div>
-          <button className="flex-shrink-0 bg-primary/20 hover:bg-primary/40 border border-primary/30 text-primary text-xs px-3 py-1.5 rounded-xl transition-all font-medium">
-            Подписаться
+          <button
+            onClick={() => handleSubscribe(ch.id, ch.name)}
+            className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-xl transition-all font-medium active:scale-95 ${
+              subscribed.includes(ch.id)
+                ? "bg-green-500/20 border border-green-500/30 text-green-400"
+                : "bg-primary/20 hover:bg-primary/40 border border-primary/30 text-primary"
+            }`}
+          >
+            {subscribed.includes(ch.id) ? "Подписан" : "Подписаться"}
           </button>
         </div>
       ))}
@@ -78,8 +144,13 @@ export function ChannelsSection() {
   );
 }
 
-export function SearchSection() {
+export function SearchSection({ onOpenChat }: { onOpenChat?: (id: number) => void }) {
   const [query, setQuery] = useState("");
+
+  const filtered = query.trim()
+    ? MOCK_CHATS.filter(u => u.name.toLowerCase().includes(query.toLowerCase()))
+    : MOCK_CHATS.slice(0, 4);
+
   return (
     <div className="p-4 animate-fade-in">
       <h2 className="font-display font-bold text-lg gradient-text mb-4">Поиск</h2>
@@ -92,10 +163,17 @@ export function SearchSection() {
           className="bg-transparent flex-1 outline-none text-foreground placeholder:text-muted-foreground"
           autoFocus
         />
+        {query && (
+          <button onClick={() => setQuery("")} className="flex-shrink-0">
+            <Icon name="X" size={16} className="text-muted-foreground hover:text-foreground" />
+          </button>
+        )}
       </div>
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-1 mb-3">Рекомендуемые</p>
-        {MOCK_CHATS.slice(0, 4).map((u, i) => (
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold px-1 mb-3">
+          {query ? `Результаты: ${filtered.length}` : "Рекомендуемые"}
+        </p>
+        {filtered.map((u, i) => (
           <div key={u.id} className="glass-light hover-lift rounded-2xl p-3 flex items-center gap-3 cursor-pointer animate-fade-in"
             style={{ animationDelay: `${i * 0.06}s`, opacity: 0, animationFillMode: "forwards" }}>
             <AvatarComp initials={u.avatar} color={u.color} online={u.online} />
@@ -103,11 +181,17 @@ export function SearchSection() {
               <div className="font-semibold text-sm text-foreground">{u.name}</div>
               <div className="text-xs text-muted-foreground">@{u.name.toLowerCase().replace(" ", "_")}</div>
             </div>
-            <button className="text-xs bg-primary/20 hover:bg-primary/40 border border-primary/30 text-primary px-3 py-1.5 rounded-xl transition-all font-medium">
+            <button
+              onClick={() => onOpenChat && onOpenChat(u.id)}
+              className="text-xs bg-primary/20 hover:bg-primary/40 border border-primary/30 text-primary px-3 py-1.5 rounded-xl transition-all font-medium active:scale-95"
+            >
               Написать
             </button>
           </div>
         ))}
+        {filtered.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground text-sm">Никого не найдено</div>
+        )}
       </div>
     </div>
   );
@@ -115,8 +199,11 @@ export function SearchSection() {
 
 export function ShopSection() {
   const [tab, setTab] = useState<"gifts" | "coins">("gifts");
+  const toast = useToast();
+
   return (
     <div className="p-4 animate-fade-in">
+      {toast.msg && <Toast message={toast.msg} onClose={toast.clear} />}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-lg gradient-text-pink">Магазин</h2>
         <div className="flex items-center gap-1.5 glass-light rounded-xl px-3 py-1.5">
@@ -134,8 +221,12 @@ export function ShopSection() {
       {tab === "gifts" ? (
         <div className="grid grid-cols-3 gap-3">
           {GIFTS.map((gift, i) => (
-            <button key={gift.id} className="glass hover-lift rounded-2xl p-4 flex flex-col items-center gap-2 transition-all animate-scale-in group"
-              style={{ animationDelay: `${i * 0.05}s`, opacity: 0, animationFillMode: "forwards" }}>
+            <button
+              key={gift.id}
+              onClick={() => toast.show(`Подарок «${gift.name}» отправлен! 🎉`)}
+              className="glass hover-lift rounded-2xl p-4 flex flex-col items-center gap-2 transition-all animate-scale-in group active:scale-95"
+              style={{ animationDelay: `${i * 0.05}s`, opacity: 0, animationFillMode: "forwards" }}
+            >
               <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gift.color} flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
                 {gift.emoji}
               </div>
@@ -162,7 +253,10 @@ export function ShopSection() {
                   {pack.bonus && <div className="text-xs text-amber-400 font-medium">{pack.bonus}</div>}
                 </div>
               </div>
-              <button className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white font-bold px-4 py-2 rounded-xl text-sm shadow hover:opacity-90 transition-opacity">
+              <button
+                onClick={() => toast.show(`Куплено ${pack.amount.toLocaleString()} монет!`)}
+                className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white font-bold px-4 py-2 rounded-xl text-sm shadow hover:opacity-90 transition-opacity active:scale-95"
+              >
                 {pack.price}
               </button>
             </div>
@@ -231,7 +325,7 @@ export function SettingsSection() {
             {s.current ? (
               <span className="text-xs text-green-400 font-medium px-2 py-1 bg-green-400/10 rounded-lg">Текущая</span>
             ) : (
-              <button className="text-xs text-destructive font-medium px-2 py-1 bg-destructive/10 rounded-lg hover:bg-destructive/20 transition-colors">Завершить</button>
+              <button className="text-xs text-destructive font-medium px-2 py-1 bg-destructive/10 rounded-lg hover:bg-destructive/20 transition-colors active:scale-95">Завершить</button>
             )}
           </div>
         ))}
@@ -241,8 +335,19 @@ export function SettingsSection() {
 }
 
 export function ProfileSection() {
+  const toast = useToast();
+
+  const menuItems = [
+    { icon: "Edit3", label: "Редактировать профиль", color: "text-primary", action: () => toast.show("Редактирование профиля — скоро!") },
+    { icon: "Bell", label: "Уведомления", color: "text-accent", action: () => toast.show("Настройки уведомлений — скоро!") },
+    { icon: "Palette", label: "Оформление", color: "text-pink-400", action: () => toast.show("Смена темы — скоро!") },
+    { icon: "HelpCircle", label: "Помощь и поддержка", color: "text-muted-foreground", action: () => toast.show("Открываю поддержку...") },
+    { icon: "LogOut", label: "Выйти из аккаунта", color: "text-destructive", action: () => toast.show("Выход выполнен") },
+  ];
+
   return (
     <div className="p-4 animate-fade-in">
+      {toast.msg && <Toast message={toast.msg} onClose={toast.clear} />}
       <h2 className="font-display font-bold text-lg gradient-text mb-4">Профиль</h2>
       <div className="glass rounded-3xl p-5 mb-4 flex flex-col items-center text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 pointer-events-none" />
@@ -271,15 +376,13 @@ export function ProfileSection() {
         ))}
       </div>
       <div className="space-y-2">
-        {[
-          { icon: "Edit3", label: "Редактировать профиль", color: "text-primary" },
-          { icon: "Bell", label: "Уведомления", color: "text-accent" },
-          { icon: "Palette", label: "Оформление", color: "text-pink-400" },
-          { icon: "HelpCircle", label: "Помощь и поддержка", color: "text-muted-foreground" },
-          { icon: "LogOut", label: "Выйти из аккаунта", color: "text-destructive" },
-        ].map((item, i) => (
-          <button key={item.label} className="w-full glass-light hover-lift rounded-2xl p-3.5 flex items-center gap-3 text-left animate-fade-in"
-            style={{ animationDelay: `${i * 0.05}s`, opacity: 0, animationFillMode: "forwards" }}>
+        {menuItems.map((item, i) => (
+          <button
+            key={item.label}
+            onClick={item.action}
+            className="w-full glass-light hover-lift rounded-2xl p-3.5 flex items-center gap-3 text-left animate-fade-in active:scale-[0.98]"
+            style={{ animationDelay: `${i * 0.05}s`, opacity: 0, animationFillMode: "forwards" }}
+          >
             <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center">
               <Icon name={item.icon} size={16} className={item.color} />
             </div>

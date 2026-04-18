@@ -3,12 +3,18 @@ import Icon from "@/components/ui/icon";
 import { type Section, NAV_ITEMS } from "@/components/messenger/mockData";
 import { ChatList, ChatView } from "@/components/messenger/ChatPanel";
 import { GroupsSection, ChannelsSection, SearchSection, ShopSection, SettingsSection, ProfileSection } from "@/components/messenger/Sections";
+import { DownloadSection } from "@/components/messenger/DownloadSection";
 
 export default function Index() {
   const [section, setSection] = useState<Section>("chats");
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
 
   const showChatView = section === "chats";
+
+  const openChat = (id: number) => {
+    setSelectedChat(id);
+    setSection("chats");
+  };
 
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-background bg-mesh">
@@ -47,7 +53,7 @@ export default function Index() {
               {NAV_ITEMS.find(n => n.id === section)?.label}
             </h1>
             {section === "chats" && (
-              <button className="w-8 h-8 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/30 flex items-center justify-center transition-all">
+              <button className="w-8 h-8 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/30 flex items-center justify-center transition-all active:scale-95">
                 <Icon name="Edit" size={14} className="text-primary" />
               </button>
             )}
@@ -56,12 +62,13 @@ export default function Index() {
 
         <div className="flex-1 overflow-y-auto">
           {section === "chats" && <ChatList onSelect={setSelectedChat} selected={selectedChat} />}
-          {section === "groups" && <GroupsSection />}
+          {section === "groups" && <GroupsSection onOpenChat={openChat} />}
           {section === "channels" && <ChannelsSection />}
-          {section === "search" && <SearchSection />}
+          {section === "search" && <SearchSection onOpenChat={openChat} />}
           {section === "shop" && <ShopSection />}
           {section === "settings" && <SettingsSection />}
           {section === "profile" && <ProfileSection />}
+          {section === "download" && <DownloadSection />}
         </div>
       </div>
 
